@@ -13,7 +13,7 @@ const identifiers = {
 async function startBot() {
   try {
     await mongoClient.connect();
-    console.log("Connected to MongoDB Successful");
+    console.log("Connection to MongoDB Successful");
     const db = mongoClient.db();
     sentContactsCollections = db.collection("sentContacts");
   } catch (error) {
