@@ -1,11 +1,13 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = process.env.MONGOURI;
-const client = new MongoClient(uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    }
-  });
+const { MongoClient, ServerApiVersion } = require("mongodb");
+require("dotenv").config();
 
-  export default client;
+const uri = process.env.MONGOURI;
+const mongoClient = new MongoClient(uri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
+
+module.exports = mongoClient;

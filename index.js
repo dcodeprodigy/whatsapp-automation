@@ -1,10 +1,6 @@
 const venom = require("venom-bot");
 const mongoClient = require("./mongoose");
-await mongoClient.connect();
-console.log("Connected to MongoDB Successful");
-const db = mongoClient.db();
 let sentContactsCollections;
-sentContactsCollections = db.collection("sentContacts");
 let data;
 let noOfRetries = 0;
 let time;
@@ -15,6 +11,15 @@ const identifiers = {
 };
 
 async function startBot() {
+  try {
+    await mongoClient.connect();
+    console.log("Connected to MongoDB Successful");
+    const db = mongoClient.db();
+    sentContactsCollections = db.collection("sentContacts");
+  } catch (error) {
+    throw error;
+  }
+
   const client = await venom.create({
     session: "whatsapp-bot",
     multidevice: true,
@@ -41,7 +46,9 @@ async function startBot() {
     // Loops through the group members of specified group
     try {
       const recepientObject = await client.getContact(recepientID); // Will return 'null' if whatsapp account currently loggedIn has never interacted with the contact before
-      const alreadySent = sentContactsCollections.findOne({contactID: recepientID});
+      const alreadySent = sentContactsCollections.findOne({
+        contactID: recepientID,
+      });
       if (alreadySent) {
         console.log(`Already messaged ${recepientID}. Skipping...`);
         continue;
@@ -49,9 +56,14 @@ async function startBot() {
 
       if (recepientObject == null) {
         // It means we have never interacted. Therefore, send message
-        await client.sendText(recepientID, messageText);
-        console.log(`message Sent to ${recepientID}`);
-        sentContactsCollections.insertOne({contactID: recepientID, sentAt: new Date()})
+        await client.sendText(recepientID, " ");
+        const recepientObject = await client.getContact(recepientID);
+        const recepientName = recepientObject.pushname;
+        await client.sendText(recepientID, getMessageText());
+        sentContactsCollections.insertOne({
+          contactID: recepientID,
+          sentAt: new Date(),
+        });
         let delayVal = getDelay();
         console.log(`Delay added is - ${delayVal}`);
         noOfRetries = 0;
@@ -106,11 +118,13 @@ async function getGroupContacts(client) {
   }
 }
 
-const messageText = `Hey. 
-I am Joseph, although you may or maynot know me as whitePhosphorus.
-Anyway, I'm just looking to get familiar with a little more persons as we head into 200 level. Kindly Save up my number, then tell me what I should save yours as...So that we may proceed from there 🙂.
-Looking forward to a reply 😇`;
+function getMessageText (recepientName) {
+  const isNameAvail = recepientName !== null && recepientName !== undefined;
+  const messageText = `Hey${isNameAvail ?  `, ${recepientName}` : "" }. \nI am Joseph, although you may or maynot know me as whitePhosphorus.\nAnyway, I'm just looking to get familiar with a little more persons from our department - as we head into 200 level. Kindly Save up my number, then tell me what I should save yours as...Hopefully, we may proceed from there 🙂.\nLooking forward to a reply 😇. \n\n PS. If this message is sent to you more than once ${isNameAvail ? "or the name I addressed you as seems a little off" : ""}, please forgive my Script${isNameAvail ? "...and your whatsapp display name 😅" : " 🙃"}`;
+  return messageText;
+}
 
 
-await startBot();
-console.log(data.alreadySaved);
+startBot().then(()=>{
+  console.log(data.alreadySaved);
+});
