@@ -1,16 +1,22 @@
 const venom = require("venom-bot");
 const mongoClient = require("./mongoose");
+const { DateTime } = require("luxon");
+const cron = require("node-cron");
 let sentContactsCollections;
 let data;
+let stopBot = false;
 let noOfRetries = 0;
-let time;
 const identifiers = {
   groupIdentifier: "g.us",
   groupName: "INFORMATION GROUP",
   groupID: "",
 };
 
+function getLocalTime () {
+  return DateTime.now().setZone("Africa/Lagos");
+}
 async function startBot() {
+
   try {
     await mongoClient.connect();
     console.log("Connection to MongoDB Successful");
@@ -42,11 +48,16 @@ async function startBot() {
   }
 
   for (let i = 0; i < data.gMembers.length; i++) {
+    if (stopBot === true) {
+      stopBot = false; // reset for next schedule
+      return // end function prematurely
+    }
+
     const recepientID = data.gMembers[i].id._serialized;
     // Loops through the group members of specified group
     try {
       const recepientObject = await client.getContact(recepientID); // Will return 'null' if whatsapp account currently loggedIn has never interacted with the contact before
-      const alreadySent = sentContactsCollections.findOne({
+      const alreadySent = await sentContactsCollections.findOne({
         contactID: recepientID,
       });
       if (alreadySent) {
@@ -59,10 +70,10 @@ async function startBot() {
         await client.sendText(recepientID, " ");
         const recepientObject = await client.getContact(recepientID);
         const recepientName = recepientObject.pushname;
-        await client.sendText(recepientID, getMessageText());
+        await client.sendText(recepientID, getMessageText(recepientName));
         sentContactsCollections.insertOne({
           contactID: recepientID,
-          sentAt: new Date(),
+          sentAt: getLocalTime(),
         });
         let delayVal = getDelay();
         console.log(`Delay added is - ${delayVal}`);
@@ -124,7 +135,36 @@ function getMessageText (recepientName) {
   return messageText;
 }
 
-
-startBot().then(()=>{
-  console.log(data.alreadySaved);
+cron.schedule("0 17 * * *", () => {
+  startBot();
+  const interval = setInterval(() => {
+    const now = getLocalTime();
+    if (now.hour >= 21 ) {
+      clearInterval(interval);
+      console.log(`Ending evening session at ${new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos' })}`);
+      setStopBot();
+      return;
+    }
+  }, 10 * 60 * 1000)
 });
+
+cron.schedule("0 9 * * *", () => {
+  startBot();
+  const interval = setInterval(() => {
+    const now = getLocalTime();
+    if (now.hour >= 12 ) {
+      clearInterval(interval);
+      console.log(`Ending evening session at ${new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos' })}`);
+      setStopBot();
+      return;
+    }
+  }, 10 * 60 * 1000)
+})
+
+function setStopBot() {
+  stopBot = true;
+}
+
+// startBot().then(()=>{
+//   console.log(data.alreadySaved);
+// });
