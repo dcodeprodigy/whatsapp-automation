@@ -39,19 +39,45 @@ async function startBot() {
   async function createClientWithRetry(retries = 3) {
     while (retries > 0) {
       try {
-        const c = await venom.create({
-          session: "whatsapp-bot",
-          multidevice: true,
-          folderNameToken: "tokens",
-          autoClose: 160000,
-        });
+        const c = await venom
+          .create({
+            session: "whatsapp-bot",
+            multidevice: true,
+            headless: true,
+            sessionStorage: {
+              set: async (key, value) => {
+                await mongoClient
+                  .db()
+                  .collection("venomSessions")
+                  .updateOne({ key }, { $set: { value } }, { upsert: true });
+              },
+              get: async (key) => {
+                const doc = await mongoClient
+                  .db()
+                  .collection("venomSessions")
+                  .findOne({ key });
+                return doc ? doc.value : null;
+              },
+              remove: async (key) => {
+                await mongoClient
+                  .db()
+                  .collection("venomSessions")
+                  .deleteOne({ key });
+              },
+            },
+            autoClose: 5 * 60 * 1000,
+          })
+          .then((client) => {
+            console.log("Venom bot is ready!");
+          });
         return c;
       } catch (error) {
         console.error("Venom failed to start:", error);
-      retries--;
-      if (retries === 0) throw new Error("Max retries reached. Bot shutting down.");
-      console.log(`Retrying venom-bot... Attempts left: ${retries}`);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+        retries--;
+        if (retries === 0)
+          throw new Error("Max retries reached. Bot shutting down.");
+        console.log(`Retrying venom-bot... Attempts left: ${retries}`);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
     }
   }
@@ -161,7 +187,7 @@ function getMessageText(recepientName) {
   return messageText;
 }
 
-cron.schedule("0 17 * * *", () => {
+cron.schedule("30 17 * * *", () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
@@ -192,13 +218,9 @@ cron.schedule("0 9 * * *", () => {
       setStopBot();
       return;
     }
-  }, 10 * 60 * 1000);
+  }, 1 * 60 * 1000);
 });
 
 function setStopBot() {
   stopBot = true;
 }
-
-// startBot().then(()=>{
-//   console.log(data.alreadySaved);
-// });
