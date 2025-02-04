@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/dcodeprodigy/whatsapp-automation/issues"
   },
-  "homepage": "https://github.com/dcodeprodigy/whatsapp-automation#readme"
+  "homepage": "https://github.com/dcodeprodigy/whatsapp-automation#readme",
+  "dependencies": {
+    "mongoose": "^8.9.6",
+    "venom-bot": "^5.3.0"
+  }
 }
