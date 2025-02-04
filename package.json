@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/dcodeprodigy/whatsapp-automation#readme",
   "dependencies": {
+    "luxon": "^3.5.0",
     "mongoose": "^8.9.6",
     "venom-bot": "^5.3.0"
   }

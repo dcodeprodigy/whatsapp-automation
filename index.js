@@ -12,11 +12,7 @@ const identifiers = {
   groupID: "",
 };
 
-function getLocalTime () {
-  return DateTime.now().setZone("Africa/Lagos");
-}
-async function startBot() {
-
+async function initDB() {
   try {
     await mongoClient.connect();
     console.log("Connection to MongoDB Successful");
@@ -25,13 +21,40 @@ async function startBot() {
   } catch (error) {
     throw error;
   }
+}
+initDB();
 
-  const client = await venom.create({
-    session: "whatsapp-bot",
-    multidevice: true,
-    folderNameToken: "tokens",
-    autoClose: 160000,
-  });
+process.on("SIGINT", async () => {
+  console.log("Shutting down bot...");
+  await mongoClient.close();
+  process.exit(0);
+});
+
+function getLocalTime() {
+  return DateTime.now().setZone("Africa/Lagos");
+}
+
+async function startBot() {
+  const client = await createClientWithRetry();
+  async function createClientWithRetry(retries = 3) {
+    while (retries > 0) {
+      try {
+        const c = await venom.create({
+          session: "whatsapp-bot",
+          multidevice: true,
+          folderNameToken: "tokens",
+          autoClose: 160000,
+        });
+        return c;
+      } catch (error) {
+        console.error("Venom failed to start:", error);
+      retries--;
+      if (retries === 0) throw new Error("Max retries reached. Bot shutting down.");
+      console.log(`Retrying venom-bot... Attempts left: ${retries}`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
+    }
+  }
 
   const chats = await client.getAllChats();
   for (const chat of chats) {
@@ -50,7 +73,7 @@ async function startBot() {
   for (let i = 0; i < data.gMembers.length; i++) {
     if (stopBot === true) {
       stopBot = false; // reset for next schedule
-      return // end function prematurely
+      return; // end function prematurely
     }
 
     const recepientID = data.gMembers[i].id._serialized;
@@ -71,9 +94,11 @@ async function startBot() {
         const recepientObject = await client.getContact(recepientID);
         const recepientName = recepientObject.pushname;
         await client.sendText(recepientID, getMessageText(recepientName));
-        sentContactsCollections.insertOne({
+        await sentContactsCollections.insertOne({
           contactID: recepientID,
-          sentAt: getLocalTime(),
+          sentAt: new Date().toLocaleTimeString("en-NG", {
+            timeZone: "Africa/Lagos",
+          }),
         });
         let delayVal = getDelay();
         console.log(`Delay added is - ${delayVal}`);
@@ -110,13 +135,8 @@ async function startBot() {
 }
 
 function getDelay() {
-  let delayVal = Number(Math.random().toFixed(2)) * 5;
-  if (delayVal < 2) {
-    let diff = 2 - delayVal;
-    delayVal = delayVal + diff;
-  }
-  delayVal = delayVal * 60 * 1000;
-  return delayVal;
+  let delayVal = Math.random() * (8 - 5) + 5; // Random number between 5 and 8
+  return delayVal * 60 * 1000; // Convert to milliseconds
 }
 
 async function getGroupContacts(client) {
@@ -129,9 +149,15 @@ async function getGroupContacts(client) {
   }
 }
 
-function getMessageText (recepientName) {
+function getMessageText(recepientName) {
   const isNameAvail = recepientName !== null && recepientName !== undefined;
-  const messageText = `Hey${isNameAvail ?  `, ${recepientName}` : "" }. \nI am Joseph, although you may or maynot know me as whitePhosphorus.\nAnyway, I'm just looking to get familiar with a little more persons from our department - as we head into 200 level. Kindly Save up my number, then tell me what I should save yours as...Hopefully, we may proceed from there 🙂.\nLooking forward to a reply 😇. \n\n PS. If this message is sent to you more than once ${isNameAvail ? "or the name I addressed you as seems a little off" : ""}, please forgive my Script${isNameAvail ? "...and your whatsapp display name 😅" : " 🙃"}`;
+  const messageText = `Hey${
+    isNameAvail ? `, ${recepientName}` : ""
+  }. \nI am Joseph, although you may or maynot know me as whitePhosphorus.\nAnyway, I'm just looking to get familiar with a little more persons from our department - as we head into 200 level. Kindly Save up my number, then tell me what I should save yours as...Hopefully, we may proceed from there 🙂.\nLooking forward to a reply 😇. \n\n PS. If this message is sent to you more than once ${
+    isNameAvail ? "or the name I addressed you as seems a little off" : ""
+  }, please forgive my Script${
+    isNameAvail ? "...and your whatsapp display name 😅" : " 🙃"
+  }`;
   return messageText;
 }
 
@@ -139,27 +165,35 @@ cron.schedule("0 17 * * *", () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
-    if (now.hour >= 21 ) {
+    if (now.hour >= 21) {
       clearInterval(interval);
-      console.log(`Ending evening session at ${new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos' })}`);
+      console.log(
+        `Ending evening session at ${new Date().toLocaleTimeString("en-NG", {
+          timeZone: "Africa/Lagos",
+        })}`
+      );
       setStopBot();
       return;
     }
-  }, 10 * 60 * 1000)
+  }, 1 * 60 * 1000);
 });
 
 cron.schedule("0 9 * * *", () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
-    if (now.hour >= 12 ) {
+    if (now.hour >= 12) {
       clearInterval(interval);
-      console.log(`Ending evening session at ${new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos' })}`);
+      console.log(
+        `Ending evening session at ${new Date().toLocaleTimeString("en-NG", {
+          timeZone: "Africa/Lagos",
+        })}`
+      );
       setStopBot();
       return;
     }
-  }, 10 * 60 * 1000)
-})
+  }, 10 * 60 * 1000);
+});
 
 function setStopBot() {
   stopBot = true;
