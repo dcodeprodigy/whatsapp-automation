@@ -45,28 +45,10 @@ async function startBot() {
           .create({
             session: "whatsapp-bot",
             multidevice: true,
-            headless: true,
-            sessionStorage: {
-              set: async (key, value) => {
-                await mongoClient
-                  .db()
-                  .collection("venomSessions")
-                  .updateOne({ key }, { $set: { value } }, { upsert: true });
-              },
-              get: async (key) => {
-                const doc = await mongoClient
-                  .db()
-                  .collection("venomSessions")
-                  .findOne({ key });
-                return doc ? doc.value : null;
-              },
-              remove: async (key) => {
-                await mongoClient
-                  .db()
-                  .collection("venomSessions")
-                  .deleteOne({ key });
-              },
-            },
+            headless: "new",
+            logQR: true,
+            mkdirFolderToken: process.env.FOLDER_DIR,
+            folderNameToken: process.env.FOLDER_DIR,
             autoClose: 5 * 60 * 1000,
           })
           .then((client) => {
