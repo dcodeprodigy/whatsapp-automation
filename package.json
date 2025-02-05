@@ -25,6 +25,7 @@
     "luxon": "^3.5.0",
     "mongoose": "^8.9.6",
     "node-cron": "^3.0.3",
-    "venom-bot": "^4.2.1"
+    "venom-bot": "^4.2.1",
+    "puppeteer": "^21.8.0"
   }
 }
