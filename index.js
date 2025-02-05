@@ -3,7 +3,7 @@ const venom = require("venom-bot");
 const mongoClient = require("./mongoose");
 const { DateTime } = require("luxon");
 const cron = require("node-cron");
-const keepAlive = require("./keepAlive")
+const keepAlive = require("./keepAlive");
 let sentContactsCollections;
 let data;
 let stopBot = false;
@@ -230,4 +230,8 @@ function setStopBot() {
 const PORT = process.env.PORT; const HOST = process.env.HOST;
 app.listen(PORT, HOST, () => {
   console.log(`Server is Running on ${PORT}`);
+})
+
+app.get("/", (req, res) => {
+  res.status(200).send({status: true, message: "alive"})
 })
