@@ -206,7 +206,7 @@ cron.schedule("0 17 * * *", () => {
   }, 1 * 60 * 1000);
 });
 
-cron.schedule("40 9 * * *", () => {
+cron.schedule("50 9 * * *", () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
