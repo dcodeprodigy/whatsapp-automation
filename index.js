@@ -2,6 +2,7 @@ const venom = require("venom-bot");
 const mongoClient = require("./mongoose");
 const { DateTime } = require("luxon");
 const cron = require("node-cron");
+const keepAlive = require("./keepAlive")
 let sentContactsCollections;
 let data;
 let stopBot = false;
@@ -187,7 +188,7 @@ function getMessageText(recepientName) {
   return messageText;
 }
 
-cron.schedule("30 17 * * *", () => {
+cron.schedule("0 17 * * *", () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
