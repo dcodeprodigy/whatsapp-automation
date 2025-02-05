@@ -20,9 +20,11 @@
   },
   "homepage": "https://github.com/dcodeprodigy/whatsapp-automation#readme",
   "dependencies": {
+    "cron": "^3.5.0",
+    "express": "^4.21.2",
     "luxon": "^3.5.0",
     "mongoose": "^8.9.6",
     "node-cron": "^3.0.3",
-    "venom-bot": "^5.3.0"
+    "venom-bot": "^4.2.1"
   }
 }

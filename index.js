@@ -1,3 +1,4 @@
+const app = require("express")();
 const venom = require("venom-bot");
 const mongoClient = require("./mongoose");
 const { DateTime } = require("luxon");
@@ -225,3 +226,7 @@ cron.schedule("0 9 * * *", () => {
 function setStopBot() {
   stopBot = true;
 }
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server is Running on ${PORT}`);
+})
