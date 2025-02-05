@@ -189,7 +189,7 @@ function getMessageText(recepientName) {
   return messageText;
 }
 
-cron.schedule("0 17 * * *", () => {
+cron.schedule(`${process.env.EVENING_SCHEDULE_TIME}`, () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
@@ -206,7 +206,7 @@ cron.schedule("0 17 * * *", () => {
   }, 1 * 60 * 1000);
 });
 
-cron.schedule("50 9 * * *", () => {
+cron.schedule(`${process.env.MORNING_SCHEDULE_TIME}`, () => {
   startBot();
   const interval = setInterval(() => {
     const now = getLocalTime();
