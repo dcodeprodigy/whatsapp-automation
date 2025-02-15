@@ -7,6 +7,7 @@ const mongoClient = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
+    connectTimeoutMS: 60000,
   },
 });
 
